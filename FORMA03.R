@@ -46,37 +46,86 @@ if (!require(emmeans)){
 #comandante entre las distintas divisiones. El Lord Sith ha sido muy claro al solicitar un reporte
 #de aquellas divisiones en las que se observen diferencias.
 
+# Se leen los datos
+datos <- read.csv2(file.choose(), encoding = "UTF-8", sep = ";")
 
-datos <- read.csv(file.choose(), encoding = "UTF-8", sep = ";")
-inst <- select(datos,"id")
-div <- select(datos,"division")
-eval<- select(datos, "eval_comandante")
-print(inst)
-print(div)
-print(eval)
+alfa <- 0.01
+
+# Hipótesis nula:
+# H0: La evaluacion promedio de los comandantes es igual para todas las divisiones
+
+# Hipótesis alternativa:
+# Ha: La evaluacion promedio de los comandantes es diferente para al menos una divisiones
 
 
-muestra <- sample_n(data)
-div1 <- filter(data, division == "Cavetrooper")
-div1 <- filter(data, division == "Snowtrooper")
-div1 <- filter(data, division == "Lavatrooper")
-div1 <- filter(data, division == "Shoretrooper")
-div1 <- filter(data, division == "Spacetrooper")
-div1 <- filter(data, division == "Sandtrooper")
-div1 <- filter(data, division == "Flametrooper")
-div1 <- filter(data, division == "Recontrooper")
+g <- ggqqplot(
+  datos,
+  x = "division",
+  color = "eval_comandante"
+)
 
+g <- g + facet_wrap(~ division)
+print(g)
 
 prueba <- aov (eval_comandante~division,
                data = datos)
 cat ("Resultado de la prueba ANOVA")
 print (summary (prueba))
 
-# Procedimiento ANOVA 
-cat ("Procedimiento ANOVA usando ezANOVA")
-prueba <- ezANOVA(data = data, dv = eval_comandante, within = division,
-                  wid = instancia, return_aov = TRUE)
-print(prueba)
+
+# GrÃ¡fico del tamaÃ±o del efecto
+g2 <- ezPlot (
+  data = datos,
+  dv = eval_comandante,
+  wid = id,#instancia
+  between = division,
+  y_lab = "Evaluacion promedio de los soldados [g]",
+  x = division
+)
+
+print (g2)
+
+#Warning: muestra un warning en consola, esto es debido a que la cantidad de datos por grupo es diferente, 
+#de todos modos no afecta el grÃ¡fico.
+
+
+#GrÃ¡fico de cajas que compara los pesos de los pollitos por tipo de suplemento
+g3 <- boxplot(eval_comandante ~ division,
+              data = datos,
+              border = "red",
+              col = "pink",
+              ylab = "Evaluacions de los comandantes [g]",
+              xlab = "Division")
+
+print (g3)
+
+
+cat ("\n\ nProcedimiento post - hoc de Holm \n\n")
+
+holm<-pairwise.t.test ( datos[["eval_comandante"]],
+                        datos[["division"]],
+                        p.adj = "holm",
+                        pool.sd = TRUE,
+                        paired = FALSE,
+                        conf.level = 1 - alfa )
+print(holm)
+
+
+#Pairwise comparisons using t tests with pooled SD 
+
+#data:  datos[["eval_comandante"]] and datos[["division"]] 
+
+#Cavetrooper Flametrooper Lavatrooper Recontrooper Sandtrooper Shoretrooper Snowtrooper
+#Flametrooper <2e-16      -            -           -            -           -            -          
+#  Lavatrooper  <2e-16      <2e-16       -           -            -           -            -          
+#  Recontrooper 1           <2e-16       <2e-16      -            -           -            -          
+#  Sandtrooper  1           <2e-16       <2e-16      1            -           -            -          
+#  Shoretrooper 1           <2e-16       <2e-16      1            1           -            -          
+#  Snowtrooper  1           <2e-16       <2e-16      1            1           1            -          
+#  Spacetrooper 1           <2e-16       <2e-16      1            1           1            1          
+
+#P value adjustment method: holm 
+
 
 
 
@@ -100,8 +149,16 @@ print(prueba)
 #Considere la semilla 407 para obtener una muestra de 400 datos, 80% de los cuales serán 
 #empleados para ajustar el modelo y el 20% restante, para evaluarlo.
 
+#Se lee el archivo y con la semilla 407 se escogen 400 muestas al azar.
+datos <- read.csv2(file.choose(), encoding = "UTF-8", sep = ";")
+set.seed(407)
+muestra <- sample_n(datos, size= 400)
+head(muestra)
 
-setseed(407)
+#Se separan el conjunto de entrenamiento y el conjunto de prueba.
+sample <- sample.int(n = nrow(muestra), size = floor(.80*nrow(muestra)), replace = F)
+entrenamiento <- muestra[sample, ]
+prueba  <- muestra[-sample, ]
 
 
 #                                                _               _____ 
