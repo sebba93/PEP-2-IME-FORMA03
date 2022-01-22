@@ -61,7 +61,7 @@ alfa <- 0.01
 # Hipótesis alternativa:
 # Ha: La evaluacion promedio de los comandantes es diferente para al menos una divisiones
 
-
+# se cumplen las condiciones para anova, falta la condicion 3 que se comprueba con un grafico
 g <- ggqqplot(
   datos,
   x = "division",
@@ -70,7 +70,10 @@ g <- ggqqplot(
 
 g <- g + facet_wrap(~ division)
 print(g)
+# no hay desviaciones importantes en los datos asi que se cumplen las condiciones.
 
+
+# se realiza anova
 prueba <- aov (eval_comandante~division,
                data = datos)
 cat ("Resultado de la prueba ANOVA")
@@ -103,8 +106,9 @@ g3 <- boxplot(eval_comandante ~ division,
 print (g3)
 
 
-cat ("\n\ nProcedimiento post - hoc de Holm \n\n")
 
+# holm
+cat ("\n\ nProcedimiento post - hoc de Holm \n\n")
 holm<-pairwise.t.test ( datos[["eval_comandante"]],
                         datos[["division"]],
                         p.adj = "holm",
