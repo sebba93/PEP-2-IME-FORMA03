@@ -33,6 +33,10 @@ if (!require(emmeans)){
   require (emmeans)
 }
 
+if (!require(dummies)){
+  install.packages("dummies", dependencies = TRUE )
+  require (dummies)
+}
 
 #   ____                                          _               _ 
 #  |  _ \   _ __    ___    __ _   _   _   _ __   | |_    __ _    / |
@@ -73,28 +77,27 @@ cat ("Resultado de la prueba ANOVA")
 print (summary (prueba))
 
 
-# GrÃ¡fico del tamaÃ±o del efecto
+# Grafico del tamaño del efecto
 g2 <- ezPlot (
   data = datos,
   dv = eval_comandante,
   wid = id,#instancia
   between = division,
-  y_lab = "Evaluacion promedio de los soldados [g]",
+  y_lab = "Evaluacion promedio de los soldados",
   x = division
 )
 
 print (g2)
 
-#Warning: muestra un warning en consola, esto es debido a que la cantidad de datos por grupo es diferente, 
-#de todos modos no afecta el grÃ¡fico.
 
 
-#GrÃ¡fico de cajas que compara los pesos de los pollitos por tipo de suplemento
+
+#Grafico de cajas 
 g3 <- boxplot(eval_comandante ~ division,
               data = datos,
               border = "red",
               col = "pink",
-              ylab = "Evaluacions de los comandantes [g]",
+              ylab = "Evaluacion de los comandantes ",
               xlab = "Division")
 
 print (g3)
@@ -126,6 +129,11 @@ print(holm)
 
 #P value adjustment method: holm 
 
+# Conclusión: Con valores p mayor a la significancia utilizada, se puede rechazar la hipótesis nula a favor
+# de la hipótesis alternativa, encontrando diferencia en la evaluacion para al menos una division,
+# esto se puede evidenciar al observar el grafico de cajas, donde las medias son notoriamente diferentes para
+# algunos suplementos, por otra parte se revisa en los valores p obtenidos en el procedimiento post - hoc.
+# Se puede concluir entonces con un 90% de confianza que la evalucion promedio es diferente para al menos una division.
 
 
 
@@ -159,6 +167,21 @@ head(muestra)
 sample <- sample.int(n = nrow(muestra), size = floor(.80*nrow(muestra)), replace = F)
 entrenamiento <- muestra[sample, ]
 prueba  <- muestra[-sample, ]
+
+#Se cambia la variable categorixa es_clon por una dummy para evaluar matriz
+#de correlación
+muestra2 <- muestra[2]
+muestra3 <- muestra[4:17]
+muestra2.dummy <- dummy.data.frame(muestra2,drop=T)
+muestra2.dummy[["es_clon"]] <- NULL
+muestraF<-cbind(muestra2.dummy,muestra3)
+cor(muestraF)
+
+#Se seleccionan las variales velocidad, peso, armadura al tener mayor correlación con el hecho de SER un CLON
+#se hace el ajuste de regresion lineal múltiple
+
+modelo <- lm(muestraF$es_clonS ~ muestraF$velocidad + muestraF$peso + muestraF$armadura)
+print(modelo)
 
 
 #                                                _               _____ 
